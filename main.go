@@ -75,7 +75,20 @@ func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bo
 			if err != nil {
 				return err
 			}
-			dirFiles[path] = len(des)
+
+			var fileCnt int
+			if isDirectories {
+				// ディレクトリのみの指定の場合は、ファイル数をディレクトリのみをカウントする
+				for _, de := range des {
+					if de.IsDir() {
+						fileCnt++
+					}
+				}
+			} else {
+				// ディレクトリ、ファイルを含む場合はターゲット以下全てのファイル数を取得
+				fileCnt = len(des)
+			}
+			dirFiles[path] = fileCnt
 		}
 
 		// 処理中のファイルが何番目かをインクリメント
