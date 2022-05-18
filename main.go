@@ -35,13 +35,13 @@ func main() {
 	}
 
 	if !strings.EqualFold(out, "") {
-		timeStamp := time.Now().Format("200601021504")
-		o, err := os.OpenFile(timeStamp+".txt", os.O_CREATE|os.O_RDWR, 0766)
+		timeStamp := time.Now()
+		o, err := os.OpenFile(timeStamp.Format("200601021504")+".txt", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0766)
 		if err != nil {
 			panic(err)
 		}
 		fmt.Fprintln(o, "")
-		fmt.Fprintln(o, timeStamp, strings.Join(os.Args, " "))
+		fmt.Fprintln(o, timeStamp.Format("2006/01/02 15:04:05"), strings.Join(os.Args, " "))
 		getDirNames(target, o, skip)
 	} else {
 		getDirNames(target, os.Stdout, skip)
