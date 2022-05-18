@@ -3,21 +3,53 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"gopkg.in/alecthomas/kingpin.v2"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
-func main() {
-	getDirNames(".", nil, os.Stdout)
+var (
+	target        string
+	out           string
+	isDirectories bool
+)
+
+func init() {
+	kingpin.Flag("target", "").Short('t').Default(".").StringVar(&target)
+	kingpin.Flag("out", "").Short('o').Default("").StringVar(&out)
+	kingpin.Flag("dir-only", "").Short('d').Default("false").BoolVar(&isDirectories)
+	kingpin.Parse()
 }
 
-// 0 => ┝、or │ or └
-// 1 => │　+ ┝、or │ or └
+func main() {
+	skip := func(entry os.DirEntry) bool {
+		if isDirectories {
+			return !entry.IsDir()
+		} else {
+			return false
+		}
+	}
 
-func getDirNames(root string, skipFunc func(entry os.DirEntry) bool, out io.Writer) {
+	if !strings.EqualFold(out, "") {
+		timeStamp := time.Now().Format("200601021504")
+		o, err := os.OpenFile(timeStamp+".txt", os.O_CREATE|os.O_RDWR, 0766)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Fprintln(o, "")
+		fmt.Fprintln(o, timeStamp, strings.Join(os.Args, " "))
+		getDirNames(target, o, skip)
+	} else {
+		getDirNames(target, os.Stdout, skip)
+	}
+
+}
+
+func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bool) {
 	// 現在処理中のファイル数
 	filesMap := make(map[string]int)
 	// rootに指定したファイルが+1されるため打消し
