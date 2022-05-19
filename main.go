@@ -75,20 +75,7 @@ func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bo
 			if err != nil {
 				return err
 			}
-
-			var fileCnt int
-			if isDirectories {
-				// ディレクトリのみの指定の場合は、ファイル数をディレクトリのみをカウントする
-				for _, de := range des {
-					if de.IsDir() {
-						fileCnt++
-					}
-				}
-			} else {
-				// ディレクトリ、ファイルを含む場合はターゲット以下全てのファイル数を取得
-				fileCnt = len(des)
-			}
-			dirFiles[path] = fileCnt
+			dirFiles[path] = getFileCount(des, isDirectories)
 		}
 
 		// 処理中のファイルが何番目かをインクリメント
@@ -98,13 +85,7 @@ func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bo
 
 		buf := &bytes.Buffer{}
 		// 空白に指定されていなければ、│を出力し空白の場合は空文字列を出力
-		for i := 0; i < cnt; i++ {
-			if _, ok := blankMap[i]; ok {
-				fmt.Fprint(buf, " ")
-			} else {
-				fmt.Fprint(buf, "│")
-			}
-		}
+		printVerticalBorder(buf, cnt, blankMap)
 
 		if dirFiles[p] == filesMap[p] {
 			// ディレクトリのファイル数と処理中のファイル数が一致した場合は└を出力。同じ列を空白に指定するマップに追加
@@ -122,4 +103,30 @@ func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bo
 		fmt.Fprint(out, buf.String())
 		return nil
 	})
+}
+
+func getFileCount(des []os.DirEntry, isDirectoryOnly bool) int {
+	var fileCnt int
+	if isDirectoryOnly {
+		// ディレクトリのみの指定の場合は、ファイル数をディレクトリのみをカウントする
+		for _, de := range des {
+			if de.IsDir() {
+				fileCnt++
+			}
+		}
+	} else {
+		// ディレクトリ、ファイルを含む場合はターゲット以下全てのファイル数を取得
+		fileCnt = len(des)
+	}
+	return fileCnt
+}
+
+func printVerticalBorder(out io.Writer, max int, blankMap map[int]interface{}) {
+	for i := 0; i < max; i++ {
+		if _, ok := blankMap[i]; ok {
+			fmt.Fprint(out, " ")
+		} else {
+			fmt.Fprint(out, "│")
+		}
+	}
 }
