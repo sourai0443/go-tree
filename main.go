@@ -20,7 +20,7 @@ var (
 )
 
 func init() {
-	kingpin.Flag("target", "Specify the directory where you want the tree to appear.").Short('t').Default(".").StringVar(&target)
+	//kingpin.Flag("target", "Specify the directory where you want the tree to appear.").Short('t').Default(".").StringVar(&target)
 	kingpin.Flag("out", "Specifies the output destination. Default is standard output.").Short('o').Default("").StringVar(&out)
 	kingpin.Flag("space", "Specifies the space between trees. Default is 0.").Short('s').Default("0").UintVar(&spaces)
 	kingpin.Flag("dir-only", "Only the directory structure is retrieved.").Short('d').Default("false").BoolVar(&isDirectoryOnly)
@@ -47,6 +47,7 @@ func main() {
 		}
 	}
 
+	var writer io.Writer
 	if !strings.EqualFold(out, blank) {
 		timeStamp := time.Now()
 		o, err := os.OpenFile(timeStamp.Format(outputFileNamePattern), os.O_CREATE|os.O_RDWR|os.O_APPEND, 0766)
@@ -55,11 +56,11 @@ func main() {
 		}
 		fmt.Fprintln(o, blank)
 		fmt.Fprintln(o, timeStamp.Format(timeStampPattern), strings.Join(os.Args, space))
-		getDirNames(target, o, skip)
+		writer = o
 	} else {
-		getDirNames(target, os.Stdout, skip)
+		writer = os.Stdout
 	}
-
+	getDirNames(".", writer, skip)
 }
 
 func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bool) {
@@ -104,8 +105,9 @@ func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bo
 			fmt.Fprintln(buf, endBorder+horizontalBorders+d.Name())
 			blankMap[cnt] = struct{}{}
 		} else if strings.EqualFold(root, orgPath) {
-			// rootと同じファイルは罫線を着けずに出力
+			// rootと同じファイルは罫線を着けずに出力し、0列目はブランクにするようマップに追加
 			fmt.Fprintln(buf, root)
+			blankMap[0] = struct{}{}
 		} else {
 			// ファイルの終端でも、rootファイルでもない場合は├を出力し、同じ列を空白に指定するマップから指定列数を削除
 			fmt.Fprintln(buf, rightExistBorder+horizontalBorders+d.Name())
