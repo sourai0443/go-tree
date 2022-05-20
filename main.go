@@ -20,7 +20,7 @@ var (
 )
 
 func init() {
-	//kingpin.Flag("target", "Specify the directory where you want the tree to appear.").Short('t').Default(".").StringVar(&target)
+	kingpin.Flag("target", "Specify the directory where you want the tree to appear.").Short('t').Default(".").StringVar(&target)
 	kingpin.Flag("out", "Specifies the output destination. Default is standard output.").Short('o').Default("").StringVar(&out)
 	kingpin.Flag("space", "Specifies the space between trees. Default is 0.").Short('s').Default("0").UintVar(&spaces)
 	kingpin.Flag("dir-only", "Only the directory structure is retrieved.").Short('d').Default("false").BoolVar(&isDirectoryOnly)
@@ -60,7 +60,7 @@ func main() {
 	} else {
 		writer = os.Stdout
 	}
-	getDirNames(".", writer, skip)
+	getDirNames(target, writer, skip)
 }
 
 func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bool) {
