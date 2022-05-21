@@ -77,10 +77,13 @@ func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bo
 		if skipFunc != nil && skipFunc(d) {
 			return nil
 		}
-
+		// ルートディレクトリ（targetで指定されているディレクトリ）かどうか
 		isRoot := strings.EqualFold(root, orgPath)
+		// パスを綺麗に整形
 		path := filepath.Clean(orgPath)
+		// ディレクトリ名のパスを取得
 		p, _ := filepath.Split(path)
+		// ディレクトリを綺麗に整形
 		p = filepath.Clean(p)
 
 		// 処理中のファイルがディレクトリの場合の処理
