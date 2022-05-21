@@ -72,6 +72,8 @@ func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bo
 	dirFiles := make(map[string]int)
 	// 空白列を記録するマップ
 	blankMap := make(map[int]interface{})
+	// rootに指定したファイルのパス数を取得
+	rootCnt := strings.Count(filepath.Clean(root), string(os.PathSeparator))
 
 	filepath.WalkDir(root, func(orgPath string, d fs.DirEntry, err error) error {
 		if skipFunc != nil && skipFunc(d) {
@@ -102,7 +104,7 @@ func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bo
 		buf := &bytes.Buffer{}
 		if !isRoot {
 			// 空白に指定されていなければ、│を出力し空白の場合は空文字列を出力
-			printVerticalBorder(buf, cnt, blankMap)
+			printVerticalBorder(buf, cnt, rootCnt, blankMap)
 		}
 
 		horizontalBorders := printHorizontalBorder(int(spaces))
@@ -113,7 +115,7 @@ func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bo
 		} else if isRoot {
 			// rootと同じファイルは罫線を着けずに出力し、ターゲットに指定されている列数はブランクにするようマップに追加
 			fmt.Fprintln(buf, root)
-			for i := 0; i <= strings.Count(filepath.Clean(root), string(os.PathSeparator)); i++ {
+			for i := 0; i <= rootCnt; i++ {
 				blankMap[i] = struct{}{}
 			}
 		} else {
@@ -148,8 +150,8 @@ func getFileCount(path string, isDirectoryOnly bool) (int, error) {
 	return fileCnt, nil
 }
 
-func printVerticalBorder(out io.Writer, max int, blankMap map[int]interface{}) {
-	for i := 0; i < max; i++ {
+func printVerticalBorder(out io.Writer, max, rootCnt int, blankMap map[int]interface{}) {
+	for i := rootCnt; i < max; i++ {
 		if _, ok := blankMap[i]; ok {
 			fmt.Fprint(out, printSpaces(int(spaces)+1))
 		} else {
