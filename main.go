@@ -79,6 +79,8 @@ func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bo
 		if skipFunc != nil && skipFunc(d) {
 			return nil
 		}
+
+		var advanceInfo string
 		// ルートディレクトリ（targetで指定されているディレクトリ）かどうか
 		isRoot := strings.EqualFold(root, orgPath)
 		// パスを綺麗に整形
@@ -92,7 +94,12 @@ func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bo
 		// ディレクトリ内のファイル数を記録する（└を打つため）
 		if d.IsDir() {
 			if dirFiles[path], err = getFileCount(path, isDirectoryOnly); err != nil {
-				panic(err)
+				switch err {
+				case os.ErrPermission:
+					advanceInfo = " [Permission denied]"
+				default:
+					panic(err)
+				}
 			}
 		}
 
@@ -110,17 +117,17 @@ func getDirNames(root string, out io.Writer, skipFunc func(entry os.DirEntry) bo
 		horizontalBorders := printHorizontalBorder(int(spaces))
 		if dirFiles[p] == filesMap[p] {
 			// ディレクトリのファイル数と処理中のファイル数が一致した場合は└を出力。同じ列を空白に指定するマップに追加
-			fmt.Fprintln(buf, endBorder+horizontalBorders+d.Name())
+			fmt.Fprintln(buf, endBorder+horizontalBorders+d.Name()+advanceInfo)
 			blankMap[cnt] = struct{}{}
 		} else if isRoot {
 			// rootと同じファイルは罫線を着けずに出力し、ターゲットに指定されている列数はブランクにするようマップに追加
-			fmt.Fprintln(buf, root)
+			fmt.Fprintln(buf, root+advanceInfo)
 			for i := 0; i <= rootCnt; i++ {
 				blankMap[i] = struct{}{}
 			}
 		} else {
 			// ファイルの終端でも、rootファイルでもない場合は├を出力し、同じ列を空白に指定するマップから指定列数を削除
-			fmt.Fprintln(buf, rightExistBorder+horizontalBorders+d.Name())
+			fmt.Fprintln(buf, rightExistBorder+horizontalBorders+d.Name()+advanceInfo)
 			delete(blankMap, cnt)
 		}
 		// 文字列として出力
@@ -133,6 +140,9 @@ func getFileCount(path string, isDirectoryOnly bool) (int, error) {
 	var fileCnt int
 	des, err := os.ReadDir(path)
 	if err != nil {
+		if os.IsPermission(err) {
+			return 1, os.ErrPermission
+		}
 		return 0, err
 	}
 
